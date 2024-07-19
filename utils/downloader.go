@@ -102,10 +102,19 @@ loop:
 			c.OnHTML(engine.ResultAttr, func(e *colly.HTMLElement) {
 				imgURL := engine.Extractor(e)
 				if imgURL != "" {
+					d.mtx.Lock()
+					if d.count >= d.targetCount {
+						return
+					}
 					d.resultChan <- &entity.URL{
 						URL:   imgURL,
 						Query: query,
 					}
+					d.count++
+					if d.count >= d.targetCount {
+						d.cancelCtx()
+					}
+					d.mtx.Unlock()
 				}
 			})
 			searchURL := fmt.Sprintf(engine.SearchURL, url.QueryEscape(query))
