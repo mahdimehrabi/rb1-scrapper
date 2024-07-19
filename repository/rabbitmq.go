@@ -15,7 +15,7 @@ func NewRabbitMQ(exchange string, ch *amqp091.Channel) *RabbitMQ {
 	return &RabbitMQ{exchange: exchange, ch: ch}
 }
 
-func (rbt *RabbitMQ) Store(url entity.URL) error {
+func (rbt *RabbitMQ) Store(url *entity.URL) error {
 	bt, err := url.JSON()
 	if err != nil {
 		return err

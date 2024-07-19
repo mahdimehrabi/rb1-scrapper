@@ -3,7 +3,7 @@ package entity
 import "encoding/json"
 
 type URL struct {
-	Name  string `json:"name"`
+	URL   string `json:"name"`
 	Query string `json:"query"`
 }
 

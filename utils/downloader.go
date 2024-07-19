@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"net/url"
+	"rb-scrapper/entity"
 	"strings"
 	"sync"
 	"time"
@@ -61,7 +62,7 @@ type DownloadResizer struct {
 	rand        *rand.Rand
 	ctx         context.Context
 	cancelCtx   context.CancelFunc
-	resultChan  chan string
+	resultChan  chan *entity.URL
 	queries     []string
 }
 
@@ -81,7 +82,7 @@ func NewDownloadResizer(targetCount uint64, slog *slog.Logger, queries []string)
 }
 
 // Download: returns channel of file paths
-func (d *DownloadResizer) Download(imageURLsChan chan string) {
+func (d *DownloadResizer) Download(imageURLsChan chan *entity.URL) {
 	d.resultChan = imageURLsChan
 
 	c := colly.NewCollector(
@@ -96,16 +97,18 @@ loop:
 		case <-d.ctx.Done():
 			break loop
 		default:
+			query := d.queries[d.rand.Intn(len(d.queries))]
 			engine := searchEngines[d.rand.Intn(len(searchEngines))]
 			c.OnHTML(engine.ResultAttr, func(e *colly.HTMLElement) {
 				imgURL := engine.Extractor(e)
 				if imgURL != "" {
-					d.resultChan <- imgURL
+					d.resultChan <- &entity.URL{
+						URL:   imgURL,
+						Query: query,
+					}
 				}
 			})
-			query := d.queries[d.rand.Intn(len(d.queries))]
 			searchURL := fmt.Sprintf(engine.SearchURL, url.QueryEscape(query))
-			d.logger.Info(fmt.Sprintf("Scraping %s for '%s'...\n", engine.Name, strings.ReplaceAll(query, " ", "+")))
 
 			if err := c.Visit(searchURL); err != nil {
 				d.logger.Error("error in sending request to %s error:%s", searchURL, err.Error())
