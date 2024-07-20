@@ -20,7 +20,7 @@ func (rbt *RabbitMQ) Store(url *entity.URL) error {
 	if err != nil {
 		return err
 	}
-	return rbt.ch.Publish(rbt.exchange, "images."+url.Query, false, false, amqp091.Publishing{
+	return rbt.ch.Publish(rbt.exchange, "scrap."+url.Query, false, false, amqp091.Publishing{
 		ContentType: "application/json",
 		Body:        bt,
 		Timestamp:   time.Now(),
