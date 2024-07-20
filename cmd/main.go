@@ -13,7 +13,7 @@ import (
 
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdin, nil))
-	drs := utils.NewDownloadResizer(2, logger, []string{"cat"})
+	drs := utils.NewDownloadResizer(21, logger, []string{"cat"})
 	iuc := make(chan *entity.URL, 10)
 
 	env := godotenv.NewEnv()

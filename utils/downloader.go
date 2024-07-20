@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	numWorkers       = 10000
-	rateLimit        = 1000 //maximum 1000 image download per second (iran network cant reach maximum but its possible in a server with good resources and internet)
-	downloadQueueCap = 100000
+	rateToken = 2
+	burst     = 2
 )
 
 type Downloader interface {
@@ -72,7 +71,7 @@ func NewDownloadResizer(targetCount uint64, slog *slog.Logger, queries []string)
 	return &DownloadResizer{
 		targetCount: targetCount,
 		logger:      slog,
-		limiter:     rate.NewLimiter(rate.Limit(rateLimit), rateLimit),
+		limiter:     rate.NewLimiter(rate.Limit(rateToken), burst),
 		mtx:         &sync.Mutex{},
 		rand:        rand.New(rand.New(s)),
 		ctx:         ctx,
@@ -100,6 +99,10 @@ loop:
 			query := d.queries[d.rand.Intn(len(d.queries))]
 			engine := searchEngines[d.rand.Intn(len(searchEngines))]
 			c.OnHTML(engine.ResultAttr, func(e *colly.HTMLElement) {
+				if !d.limiter.Allow() {
+					time.Sleep(500 * time.Millisecond)
+					return
+				}
 				imgURL := engine.Extractor(e)
 				if imgURL != "" {
 					d.mtx.Lock()
@@ -118,12 +121,12 @@ loop:
 				}
 			})
 			searchURL := fmt.Sprintf(engine.SearchURL, url.QueryEscape(query))
-
 			if err := c.Visit(searchURL); err != nil {
 				d.logger.Error("error in sending request to %s error:%s", searchURL, err.Error())
 				continue
 			}
 			c.Wait()
+			time.Sleep(1 * time.Second)
 		}
 	}
 	close(d.resultChan)
