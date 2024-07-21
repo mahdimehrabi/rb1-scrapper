@@ -4,12 +4,13 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"strings"
 )
 
 type Env struct {
 	AMQP          string
 	ImageExchange string
-	ScrapTopics   string
+	ScrapTopics   []string
 }
 
 func NewEnv() *Env {
@@ -23,5 +24,8 @@ func (e *Env) Load() {
 
 	e.AMQP = os.Getenv("AMQP")
 	e.ImageExchange = os.Getenv("IMAGE_EXCHANGE")
-	e.ScrapTopics = os.Getenv("SCRAP_TOPICS")
+	scrapTopics := os.Getenv("SCRAP_TOPICS")
+	for _, topic := range strings.Split(scrapTopics, ",") {
+		e.ScrapTopics = append(e.ScrapTopics, topic)
+	}
 }

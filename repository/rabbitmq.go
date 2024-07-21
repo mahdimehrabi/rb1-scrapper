@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"fmt"
 	"github.com/rabbitmq/amqp091-go"
 	"rb-scrapper/entity"
 	"time"
@@ -20,6 +21,7 @@ func (rbt *RabbitMQ) Store(url *entity.URL) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("scrap." + url.Query)
 	return rbt.ch.Publish(rbt.exchange, "scrap."+url.Query, false, false, amqp091.Publishing{
 		ContentType: "application/json",
 		Body:        bt,
