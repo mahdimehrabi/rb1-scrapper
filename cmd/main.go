@@ -11,6 +11,7 @@ import (
 	"rb-scrapper/infrastructure/godotenv"
 	"rb-scrapper/repository"
 	"rb-scrapper/utils"
+	"strconv"
 	"time"
 )
 
@@ -48,8 +49,15 @@ func initHTTPServer(env *godotenv.Env, logger *slog.Logger, iuc chan *entity.URL
 		Handler:     mux,
 		ReadTimeout: 3 * time.Second,
 	}
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		drs := utils.NewDownloadResizer(21, logger, env.ScrapTopics)
+	mux.HandleFunc("/{count}", func(w http.ResponseWriter, r *http.Request) {
+		countStr := r.PathValue("count")
+		count, err := strconv.Atoi(countStr)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
+		drs := utils.NewDownloadResizer(count, logger, env.ScrapTopics)
 		go drs.Download(iuc)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))

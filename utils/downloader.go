@@ -65,11 +65,11 @@ type DownloadResizer struct {
 	queries     []string
 }
 
-func NewDownloadResizer(targetCount uint64, slog *slog.Logger, queries []string) *DownloadResizer {
+func NewDownloadResizer(targetCount int, slog *slog.Logger, queries []string) *DownloadResizer {
 	s := rand.NewSource(time.Now().UnixNano())
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	return &DownloadResizer{
-		targetCount: targetCount,
+		targetCount: uint64(targetCount),
 		logger:      slog,
 		limiter:     rate.NewLimiter(rate.Limit(rateToken), burst),
 		mtx:         &sync.Mutex{},
