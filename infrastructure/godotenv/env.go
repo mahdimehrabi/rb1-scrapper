@@ -11,6 +11,7 @@ type Env struct {
 	AMQP          string
 	ImageExchange string
 	ScrapTopics   []string
+	Host          string
 }
 
 func NewEnv() *Env {
@@ -24,6 +25,7 @@ func (e *Env) Load() {
 
 	e.AMQP = os.Getenv("AMQP")
 	e.ImageExchange = os.Getenv("IMAGE_EXCHANGE")
+	e.Host = os.Getenv("HOST")
 	scrapTopics := os.Getenv("SCRAP_TOPICS")
 	for _, topic := range strings.Split(scrapTopics, ",") {
 		e.ScrapTopics = append(e.ScrapTopics, topic)

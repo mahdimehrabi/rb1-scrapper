@@ -1,14 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"github.com/rabbitmq/amqp091-go"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"rb-scrapper/entity"
 	"rb-scrapper/infrastructure/godotenv"
 	"rb-scrapper/repository"
 	"rb-scrapper/utils"
+	"time"
 )
 
 func main() {
@@ -17,7 +20,6 @@ func main() {
 
 	env := godotenv.NewEnv()
 	env.Load()
-	drs := utils.NewDownloadResizer(21, logger, env.ScrapTopics)
 	ampqConn, err := amqp091.Dial(env.AMQP)
 	FatalOnError(err)
 	defer ampqConn.Close()
@@ -27,7 +29,8 @@ func main() {
 	FatalOnError(err)
 
 	rbt := repository.NewRabbitMQ(env.ImageExchange, ch)
-	go drs.Download(iuc)
+
+	go initHTTPServer(env, logger, iuc)
 
 	for i := range iuc {
 		err = rbt.Store(i)
@@ -38,6 +41,30 @@ func main() {
 	}
 }
 
+func initHTTPServer(env *godotenv.Env, logger *slog.Logger, iuc chan *entity.URL) *http.Server {
+	mux := http.NewServeMux()
+	httpServer := &http.Server{
+		Addr:        env.Host,
+		Handler:     mux,
+		ReadTimeout: 3 * time.Second,
+	}
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		drs := utils.NewDownloadResizer(21, logger, env.ScrapTopics)
+		go drs.Download(iuc)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+
+	go func() {
+		err := httpServer.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			logger.Error("failed to run app", "err", err)
+			panic(err)
+		}
+	}()
+	fmt.Printf("\nrunning on %s", env.Host)
+	return httpServer
+}
 func FatalOnError(err error) {
 	if err != nil {
 		log.Fatal(err.Error())
