@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	logger := slog.New(slog.NewTextHandler(os.Stdin, nil))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	iuc := make(chan *entity.URL, 10)
 
 	env := godotenv.NewEnv()
