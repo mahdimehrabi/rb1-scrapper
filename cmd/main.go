@@ -21,6 +21,7 @@ func main() {
 
 	env := godotenv.NewEnv()
 	env.Load()
+	fmt.Println(env)
 	ampqConn, err := amqp091.Dial(env.AMQP)
 	FatalOnError(err)
 	defer ampqConn.Close()
